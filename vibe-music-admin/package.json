@@ -10,9 +10,9 @@
     "email": "vibe_music_service@163.com"
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=--max-old-space-size=4096 vite",
+    "dev": "vite",
     "serve": "pnpm dev",
-    "build": "rimraf dist && NODE_OPTIONS=--max-old-space-size=8192 vite build",
+    "build": "rimraf dist && vite build",
     "build:staging": "rimraf dist && vite build --mode staging",
     "report": "rimraf dist && vite build",
     "preview": "vite preview",
@@ -63,6 +63,7 @@
     "qs": "^6.13.1",
     "responsive-storage": "^2.2.0",
     "sortablejs": "^1.15.6",
+    "tippy.js": "6.3.7",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
     "vue-tippy": "^6.5.0",

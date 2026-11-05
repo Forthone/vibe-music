@@ -1,0 +1,29 @@
+name: vibe-music-local
+services:
+  mysql:
+    image: mysql:8.0.33
+    environment:
+      MYSQL_ROOT_PASSWORD: vibe_local_root_2026
+      MYSQL_DATABASE: vibe_music
+      MYSQL_USER: vibe
+      MYSQL_PASSWORD: vibe_local_2026
+    ports:
+      - "127.0.0.1:23306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/vibe_music.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+  redis:
+    image: redis:6.2.7
+    ports:
+      - "127.0.0.1:26379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+volumes:
+  mysql-data:
+  redis-data:
