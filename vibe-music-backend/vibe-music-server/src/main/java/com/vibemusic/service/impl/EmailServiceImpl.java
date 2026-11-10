@@ -8,6 +8,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(content);
             mailSender.send(mimeMessage);
             return true;
-        } catch (MessagingException e) {
+        } catch (MessagingException | MailException e) {
             log.error(MessageConstant.EMAIL_SEND_FAILED, e);
             return false;
         }

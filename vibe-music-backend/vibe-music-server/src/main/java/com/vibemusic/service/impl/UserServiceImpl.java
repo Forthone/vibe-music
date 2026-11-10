@@ -108,8 +108,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Override
     @CacheEvict(cacheNames = "userCache", allEntries = true)
     public Result register(UserRegisterDTO userRegisterDTO) {
-        // 删除Redis中的验证码
-        stringRedisTemplate.delete("verificationCode:" + userRegisterDTO.getEmail());
 
         User userByUsername = userMapper.selectOne(new QueryWrapper<User>().eq("username", userRegisterDTO.getUsername()));
         if (userByUsername != null) {
@@ -130,6 +128,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (userMapper.insert(user) == 0) {
             return Result.error(MessageConstant.REGISTER + MessageConstant.FAILED);
         }
+        stringRedisTemplate.delete("verificationCode:" + userRegisterDTO.getEmail());
         return Result.success(MessageConstant.REGISTER + MessageConstant.SUCCESS);
     }
 

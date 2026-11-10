@@ -11,3 +11,6 @@ node_modules/
 .local/
 **/.env.*.local
 **/application-dev.yml
+
+# Track backend regression tests.
+!vibe-music-backend/vibe-music-server/src/test/

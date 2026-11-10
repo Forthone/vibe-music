@@ -125,3 +125,10 @@ pnpm dev
 
 This project is a derivative work based on the original by [Alex-LiSun](https://github.com/Alex-LiSun), licensed under the MIT License. Modifications by zl1nq are also released under the MIT License.
 
+
+
+## 个人学习与优化
+
+1. 接入并调试百炼 AI 音乐助手，支持多轮对话、曲库工具调用和 SSE 流式回复。
+2. 优化用户缓存隔离，避免收藏列表及歌曲、歌单、歌手详情中的收藏状态在不同用户之间混用。
+3. 完善邮件验证码功能，优化 SMTP 配置、验证码生成、发送异常处理及注册成功后的验证码清理。

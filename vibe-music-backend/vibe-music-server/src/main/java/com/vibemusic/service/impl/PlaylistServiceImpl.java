@@ -202,7 +202,7 @@ public class PlaylistServiceImpl extends ServiceImpl<PlaylistMapper, Playlist> i
      * @return 歌单详情
      */
     @Override
-    @Cacheable(key = "#playlistId")
+    @Cacheable(keyGenerator = "userScopedCacheKeyGenerator")
     public Result<PlaylistDetailVO> getPlaylistDetail(Long playlistId, HttpServletRequest request) {
         PlaylistDetailVO playlistDetailVO = playlistMapper.getPlaylistDetailById(playlistId);
         if (playlistDetailVO == null) {
