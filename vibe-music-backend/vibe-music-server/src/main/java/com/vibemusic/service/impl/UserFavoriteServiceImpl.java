@@ -25,6 +25,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -49,6 +50,8 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
     private SongMapper songMapper;
     @Autowired
     private PlaylistMapper playlistMapper;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 获取用户收藏的歌曲列表
@@ -102,8 +105,10 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
 
         UserFavorite userFavorite = new UserFavorite();
         userFavorite.setUserId(userId).setType(0).setSongId(songId).setCreateTime(LocalDateTime.now());
-        userFavoriteMapper.insert(userFavorite);
-
+        if (userFavoriteMapper.insert(userFavorite) == 0) {
+            return Result.error(MessageConstant.ADD + MessageConstant.FAILED);
+        }
+        redisTemplate.delete("recommended_songs:v2:" + userId);
         return Result.success(MessageConstant.ADD + MessageConstant.SUCCESS);
     }
 
@@ -126,6 +131,7 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
             return Result.error(MessageConstant.DELETE + MessageConstant.FAILED);
         }
 
+        redisTemplate.delete("recommended_songs:v2:" + userId);
         return Result.success(MessageConstant.DELETE + MessageConstant.SUCCESS);
     }
 

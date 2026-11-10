@@ -179,41 +179,36 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
         // 获取用户 ID
         Long userId = TypeConversionUtil.toLong(map.get(JwtClaimsConstant.USER_ID));
 
-        // 查询用户收藏的歌曲 ID
-        List<Long> favoriteSongIds = userFavoriteMapper.getFavoriteSongIdsByUserId(userId);
-        if (favoriteSongIds.isEmpty()) {
-            return Result.success(songMapper.getRandomSongsWithArtist());
-        }
-
-        // 查询用户收藏的歌曲风格并统计频率
-        List<Long> favoriteStyleIds = songMapper.getFavoriteSongStyles(favoriteSongIds);
-        Map<Long, Long> styleFrequency = favoriteStyleIds.stream()
-                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-
-        // 按风格出现次数降序排序
-        List<Long> sortedStyleIds = styleFrequency.entrySet().stream()
-                .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-
-        // 收藏的歌曲均无风格数据时无法按风格推荐，退化为随机歌曲
-        if (sortedStyleIds.isEmpty()) {
-            log.warn("用户 {} 收藏的歌曲均无风格数据，推荐退化为随机歌曲", userId);
-            return Result.success(songMapper.getRandomSongsWithArtist());
-        }
-
-        // 从 Redis 获取缓存的推荐列表
-        String redisKey = "recommended_songs:" + userId;
-        List<SongVO> cachedSongs = redisTemplate.opsForList().range(redisKey, 0, -1);
-
-        // 如果 Redis 没有缓存，则查询数据库并缓存
+        String redisKey = "recommended_songs:v2:" + userId;
+        List<SongVO> cachedSongs = (List<SongVO>) redisTemplate.opsForValue().get(redisKey);
         if (cachedSongs == null || cachedSongs.isEmpty()) {
+            // 查询用户收藏的歌曲 ID
+            List<Long> favoriteSongIds = userFavoriteMapper.getFavoriteSongIdsByUserId(userId);
+            if (favoriteSongIds.isEmpty()) {
+                return Result.success(songMapper.getRandomSongsWithArtist());
+            }
+
+            // 查询用户收藏的歌曲风格并统计频率
+            List<Long> favoriteStyleIds = songMapper.getFavoriteSongStyles(favoriteSongIds);
+            Map<Long, Long> styleFrequency = favoriteStyleIds.stream()
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+            // 按风格出现次数降序排序
+            List<Long> sortedStyleIds = styleFrequency.entrySet().stream()
+                    .sorted((a, b) -> Long.compare(b.getValue(), a.getValue()))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+
+            // 收藏的歌曲均无风格数据时无法按风格推荐，退化为随机歌曲
+            if (sortedStyleIds.isEmpty()) {
+                log.warn("用户 {} 收藏的歌曲均无风格数据，推荐退化为随机歌曲", userId);
+                return Result.success(songMapper.getRandomSongsWithArtist());
+            }
             // 根据排序后的风格推荐歌曲（排除已收藏歌曲）
             cachedSongs = songMapper.getRecommendedSongsByStyles(sortedStyleIds, favoriteSongIds, 80);
-            // 空列表写入 Redis 会抛异常，仅在非空时缓存
+            // 一次写入候选列表和过期时间
             if (!cachedSongs.isEmpty()) {
-                redisTemplate.opsForList().rightPushAll(redisKey, cachedSongs);
-                redisTemplate.expire(redisKey, 30, TimeUnit.MINUTES); // 设置过期时间 30 分钟
+                redisTemplate.opsForValue().set(redisKey, cachedSongs, 30, TimeUnit.MINUTES); // 设置过期时间 30 分钟
                 log.debug("已缓存用户 {} 的风格推荐歌曲 {} 首", userId, cachedSongs.size());
             } else {
                 log.warn("用户 {} 按风格推荐查询结果为空，跳过缓存写入", userId);
@@ -221,8 +216,9 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
         }
 
         // 随机选取 20 首
-        Collections.shuffle(cachedSongs);
-        List<SongVO> recommendedSongs = cachedSongs.subList(0, Math.min(20, cachedSongs.size()));
+        List<SongVO> candidates = new ArrayList<>(cachedSongs);
+        Collections.shuffle(candidates);
+        List<SongVO> recommendedSongs = new ArrayList<>(candidates.subList(0, Math.min(20, candidates.size())));
 
         // 如果推荐的歌曲不足 20 首，则用随机歌曲填充
         if (recommendedSongs.size() < 20) {
@@ -232,7 +228,7 @@ public class SongServiceImpl extends ServiceImpl<SongMapper, Song> implements IS
                 if (recommendedSongs.size() >= 20){
                     break;
                 }
-                if (!addedSongIds.contains(song.getSongId())) {
+                if (addedSongIds.add(song.getSongId())) {
                     recommendedSongs.add(song);
                 }
             }
