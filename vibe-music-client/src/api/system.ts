@@ -184,3 +184,7 @@ export const deleteComment = (commentId: number) => {
 export const addFeedback = (data: { content: string }) => {
   return http<Result>('post', '/feedback/addFeedback', { params: data })
 }
+
+export const getSongComments = (songId: number, pageNum = 1, pageSize = 20) => {
+  return http<ResultTable>('get', '/comment/song', { params: { songId, pageNum, pageSize } })
+}

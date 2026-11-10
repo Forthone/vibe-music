@@ -1,5 +1,9 @@
 package com.vibemusic.service;
 
+import com.vibemusic.result.PageResult;
+import com.vibemusic.model.vo.CommentVO;
+import com.vibemusic.model.dto.CommentPageDTO;
+
 import com.vibemusic.model.dto.CommentPlaylistDTO;
 import com.vibemusic.model.dto.CommentSongDTO;
 import com.vibemusic.model.entity.Comment;
@@ -15,6 +19,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2025-01-09
  */
 public interface ICommentService extends IService<Comment> {
+    Result<PageResult<CommentVO>> getSongComments(
+            CommentPageDTO query);
+
 
     // 新增歌曲评论
     Result addSongComment(CommentSongDTO commentSongDTO);

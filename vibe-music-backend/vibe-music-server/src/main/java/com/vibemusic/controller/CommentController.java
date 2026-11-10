@@ -1,5 +1,9 @@
 package com.vibemusic.controller;
 
+import com.vibemusic.result.PageResult;
+import com.vibemusic.model.vo.CommentVO;
+import com.vibemusic.model.dto.CommentPageDTO;
+
 
 import com.vibemusic.model.dto.CommentPlaylistDTO;
 import com.vibemusic.model.dto.CommentSongDTO;
@@ -23,6 +27,13 @@ public class CommentController {
 
     @Autowired
     private ICommentService commentService;
+
+    @GetMapping("/song")
+    public Result<PageResult<CommentVO>> getSongComments(
+            @Valid CommentPageDTO query) {
+        return commentService.getSongComments(query);
+    }
+
 
     /**
      * 新增歌曲评论

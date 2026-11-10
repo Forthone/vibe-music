@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.vibemusic.mapper.CommentMapper">
-
+    <select id="getSongComments" resultType="com.vibemusic.model.vo.CommentVO">
+        SELECT c.id AS commentId, u.username, u.user_avatar AS userAvatar,
+               c.content, c.create_time AS createTime, c.like_count AS likeCount
+        FROM tb_comment c
+        LEFT JOIN tb_user u ON u.id = c.user_id
+        WHERE c.song_id = #{songId} AND c.type = 0
+        ORDER BY c.create_time DESC, c.id DESC
+    </select>
 </mapper>

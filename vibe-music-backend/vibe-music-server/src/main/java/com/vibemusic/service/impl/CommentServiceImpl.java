@@ -1,5 +1,10 @@
 package com.vibemusic.service.impl;
 
+import com.vibemusic.result.PageResult;
+import com.vibemusic.model.vo.CommentVO;
+import com.vibemusic.model.dto.CommentPageDTO;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
 import com.vibemusic.constant.JwtClaimsConstant;
 import com.vibemusic.constant.MessageConstant;
 import com.vibemusic.mapper.CommentMapper;
@@ -32,6 +37,21 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Autowired
     private CommentMapper commentMapper;
+
+    @Override
+    public Result<PageResult<CommentVO>> getSongComments(
+            CommentPageDTO query) {
+        if (query.getSongId() == null || query.getSongId() < 1 || query.getPageNum() == null
+                || query.getPageNum() < 1 || query.getPageSize() == null
+                || query.getPageSize() < 1 || query.getPageSize() > 100) {
+            throw new IllegalArgumentException("Invalid comment pagination");
+        }
+        var page = new Page<CommentVO>(
+                query.getPageNum(), query.getPageSize());
+        var comments = commentMapper.getSongComments(page, query.getSongId());
+        return Result.success(new PageResult<>(comments.getTotal(), comments.getRecords()));
+    }
+
 
     /**
      * 添加歌曲评论

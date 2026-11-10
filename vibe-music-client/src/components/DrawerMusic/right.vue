@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { SongDetail } from '@/api/interface'
-import { ref, inject, type Ref, computed } from 'vue'
+import type { SongDetail, Comment } from '@/api/interface'
+import { ref, inject, type Ref, computed, watch } from 'vue'
 import { formatNumber } from '@/utils'
 import coverImg from '@/assets/cover.png'
 import {
   likeComment,
   addSongComment,
-  getSongDetail,
+  getSongComments,
   deleteComment,
 } from '@/api/system'
 import { ElMessage } from 'element-plus'
 import { UserStore } from '@/stores/modules/user'
 
-const songDetail = inject<Ref<SongDetail | null>>('songDetail')
+const songDetail = inject<Ref<SongDetail | null>>('songDetail', ref(null))
 const userStore = UserStore()
 
 // 获取当前用户名
@@ -22,13 +22,39 @@ const currentUsername = computed(() => userStore.userInfo?.username || '')
 const commentContent = ref('')
 const maxLength = 180
 
-// 对评论进行排序，最新的显示在前面
-const comments = computed(() => {
-  if (!songDetail.value?.comments) return []
-  return [...songDetail.value.comments].sort(
-    (a, b) => b.commentId - a.commentId
-  )
-})
+const comments = ref<Comment[]>([])
+const commentTotal = ref(0)
+const commentPage = ref(1)
+const commentsLoading = ref(false)
+let commentRequestId = 0
+
+const loadComments = async (page = 1) => {
+  const songId = songDetail.value?.songId
+  if (!songId) return
+  const requestId = ++commentRequestId
+  commentsLoading.value = true
+  try {
+    const response = await getSongComments(songId, page, 20)
+    if (requestId !== commentRequestId || songId !== songDetail.value?.songId) return
+    if (response.code !== 0 || !response.data) throw new Error('comments')
+    comments.value = response.data.items as Comment[]
+    commentTotal.value = response.data.total ?? 0
+    commentPage.value = page
+  } catch {
+    if (requestId === commentRequestId) ElMessage.error('评论加载失败，请重试')
+  } finally {
+    if (requestId === commentRequestId) commentsLoading.value = false
+  }
+}
+
+watch(() => songDetail.value?.songId, () => {
+  ++commentRequestId
+  comments.value = []
+  commentTotal.value = 0
+  commentPage.value = 1
+  commentsLoading.value = false
+  loadComments(1)
+}, { immediate: true })
 
 // 发布评论
 const handleComment = async () => {
@@ -55,11 +81,7 @@ const handleComment = async () => {
     if (res.code === 0) {
       ElMessage.success('评论发布成功')
       commentContent.value = ''
-      // 重新获取歌曲详情以更新评论列表
-      const detailRes = await getSongDetail(songId)
-      if (detailRes.code === 0 && detailRes.data) {
-        songDetail.value = detailRes.data as unknown as SongDetail
-      }
+      if (songId === songDetail.value?.songId) await loadComments(1)
     } else {
       ElMessage.error('评论发布失败')
     }
@@ -87,23 +109,8 @@ const handleLike = async (comment: any) => {
     // 调用点赞接口
     const res = await likeComment(comment.commentId)
     if (res.code === 0) {
-      // 更新评论的点赞数量
-      if (songDetail.value && songDetail.value.comments) {
-        const updatedComments = songDetail.value.comments.map((item) => {
-          if (item.commentId === comment.commentId) {
-            return {
-              ...item,
-              likeCount: item.likeCount + 1,
-            }
-          }
-          return item
-        })
-
-        songDetail.value = {
-          ...songDetail.value,
-          comments: updatedComments,
-        }
-      }
+      const current = comments.value.find(item => item.commentId === comment.commentId)
+      if (current) current.likeCount = (current.likeCount || 0) + 1
 
       ElMessage.success('点赞成功')
     }
@@ -118,14 +125,8 @@ const handleDelete = async (comment: any) => {
     const res = await deleteComment(comment.commentId)
     if (res.code === 0) {
       ElMessage.success('删除成功')
-      // 重新获取歌曲详情以更新评论列表
-      const songId = songDetail.value?.songId
-      if (songId) {
-        const detailRes = await getSongDetail(songId)
-        if (detailRes.code === 0 && detailRes.data) {
-          songDetail.value = detailRes.data as unknown as SongDetail
-        }
-      }
+      const page = Math.max(1, Math.min(commentPage.value, Math.ceil((commentTotal.value - 1) / 20)))
+      await loadComments(page)
     } else {
       ElMessage.error('删除失败')
     }
@@ -156,7 +157,7 @@ const handleDelete = async (comment: any) => {
       <!-- 评论区 -->
       <div class="space-y-4">
         <h3 class="text-xl font-semibold text-primary-foreground mt-12">
-          评论（{{ formatNumber(songDetail.comments?.length || 0) }}）
+          评论（{{ formatNumber(commentTotal) }}）
         </h3>
 
         <!-- 评论输入框 -->
@@ -234,8 +235,14 @@ const handleDelete = async (comment: any) => {
           </template>
         </div>
         <div v-else class="text-center py-8 text-muted-foreground">
-          <p>暂无评论，快来抢沙发吧~</p>
+          <p>{{ commentsLoading ? '评论加载中…' : '暂无评论，快来抢沙发吧~' }}</p>
         </div>
+        <el-pagination
+          v-if="commentTotal > 20"
+          :current-page="commentPage" :page-size="20" :total="commentTotal"
+          :disabled="commentsLoading" layout="prev, pager, next"
+          @current-change="loadComments"
+        />
       </div>
     </div>
     <div v-else class="flex items-center justify-center h-full">

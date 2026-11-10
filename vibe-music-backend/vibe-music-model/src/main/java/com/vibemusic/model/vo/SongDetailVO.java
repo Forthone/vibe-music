@@ -70,6 +70,6 @@ public class SongDetailVO implements Serializable {
     /**
      * 评论列表
      */
-    private List<CommentVO> comments;
+    private List<CommentVO> comments = java.util.Collections.emptyList();
 
 }

@@ -1,0 +1,65 @@
+{
+  "measured_at_utc": "2026-11-10T08:49:38Z",
+  "mysql": "8.0.33",
+  "comments": 2000,
+  "concurrency": 8,
+  "page_size": 20,
+  "rounds": 3,
+  "requests_per_worker_per_round": 10,
+  "scope": "PyMySQL SQL + response assembly/JSON serialization; no HTTP, Redis, browser rendering or connection setup",
+  "fixture": "Synthetic comments on one song; existing single-column indexes; warmed connections and data",
+  "baseline_commit": "b848f733942d44a97827cbdd46158e2e0452e1a8",
+  "checks": "100 pages, stable order, total, no duplicate/missing IDs, empty page, song/type isolation",
+  "results": [
+    {
+      "mode": "detail_with_all_comments",
+      "requests": 240,
+      "mean_ms": 264.63597208336677,
+      "p95_ms": 315.88279999778024,
+      "median_round_rps": 29.661819295066724,
+      "json_bytes": 318054,
+      "rounds": [
+        {
+          "mean_ms": 263.1813287500336,
+          "p95_ms": 309.51809999896795,
+          "requests_per_second": 29.678340580071037
+        },
+        {
+          "mean_ms": 262.8805400001056,
+          "p95_ms": 319.8846000013873,
+          "requests_per_second": 29.661819295066724
+        },
+        {
+          "mean_ms": 267.84604749996106,
+          "p95_ms": 315.88279999778024,
+          "requests_per_second": 29.226703796286518
+        }
+      ]
+    },
+    {
+      "mode": "detail_and_first_comment_page",
+      "requests": 240,
+      "mean_ms": 6.9369708332639375,
+      "p95_ms": 8.859599998686463,
+      "median_round_rps": 1058.0191236832743,
+      "json_bytes": 3536,
+      "rounds": [
+        {
+          "mean_ms": 6.68248499987385,
+          "p95_ms": 8.59640000271611,
+          "requests_per_second": 1058.0191236832743
+        },
+        {
+          "mean_ms": 7.586838749921299,
+          "p95_ms": 9.481299999606563,
+          "requests_per_second": 925.6463035790501
+        },
+        {
+          "mean_ms": 6.541588749996663,
+          "p95_ms": 8.234499997342937,
+          "requests_per_second": 1070.6580799376993
+        }
+      ]
+    }
+  ]
+}

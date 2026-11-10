@@ -13,14 +13,6 @@
         <result column="songCoverUrl" property="coverUrl"/>
         <result column="audioUrl" property="audioUrl"/>
         <result column="releaseTime" property="releaseTime"/>
-        <collection property="comments" ofType="com.vibemusic.model.vo.CommentVO">
-            <id column="commentId" property="commentId"/>
-            <result column="username" property="username"/>
-            <result column="userAvatar" property="userAvatar"/>
-            <result column="content" property="content"/>
-            <result column="createTime" property="createTime"/>
-            <result column="likeCount" property="likeCount"/>
-        </collection>
     </resultMap>
 
     <!-- 查询歌曲详情 -->
@@ -33,17 +25,9 @@
                s.cover_url    AS songCoverUrl,
                s.audio_url    AS audioUrl,
                s.release_time AS releaseTime,
-               a.name         AS artistName,
-               c.id           AS commentId,
-               c.content      AS content,
-               c.create_time  AS createTime,
-               c.like_count   AS likeCount,
-               u.username     AS username,
-               u.user_avatar  AS userAvatar
+               a.name         AS artistName
         FROM tb_song s
                  LEFT JOIN tb_artist a ON s.artist_id = a.id
-                 LEFT JOIN tb_comment c ON s.id = c.song_id AND c.type = 0
-                 LEFT JOIN tb_user u ON c.user_id = u.id
         WHERE s.id = #{songId}
     </select>
 
