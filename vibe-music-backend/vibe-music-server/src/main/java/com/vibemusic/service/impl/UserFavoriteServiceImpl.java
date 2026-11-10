@@ -63,17 +63,11 @@ public class UserFavoriteServiceImpl extends ServiceImpl<UserFavoriteMapper, Use
         Object userIdObj = map.get(JwtClaimsConstant.USER_ID);
         Long userId = TypeConversionUtil.toLong(userIdObj);
 
-        // 获取用户收藏的歌曲 ID 列表
-        List<Long> favoriteSongIds = userFavoriteMapper.getUserFavoriteSongIds(userId);
-        if (favoriteSongIds.isEmpty()) {
-            return Result.success(new PageResult<>(0L, Collections.emptyList()));
-        }
-
-        // 分页查询收藏的歌曲，支持模糊查询
+        // 按当前用户直接关联分页查询收藏歌曲
         Page<SongVO> page = new Page<>(songDTO.getPageNum(), songDTO.getPageSize());
-        IPage<SongVO> songPage = songMapper.getSongsByIds(
+        IPage<SongVO> songPage = songMapper.getUserFavoriteSongs(
                 page,
-                favoriteSongIds,
+                userId,
                 songDTO.getSongName(),
                 songDTO.getArtistName(),
                 songDTO.getAlbum()

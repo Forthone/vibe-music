@@ -56,7 +56,7 @@ public class UserScopedCacheKeyGenerator implements KeyGenerator {
             String payload = objectMapper.writeValueAsString(List.of(identity, arguments));
             String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                     .digest(payload.getBytes(StandardCharsets.UTF_8)));
-            return "user-v2:" + method.getDeclaringClass().getName() + ":"
+            return "user-v3:" + method.getDeclaringClass().getName() + ":"
                     + method.getName() + ":" + digest;
         } catch (java.io.IOException | java.security.NoSuchAlgorithmException e) {
             throw new IllegalStateException("Cannot build user-scoped cache key", e);

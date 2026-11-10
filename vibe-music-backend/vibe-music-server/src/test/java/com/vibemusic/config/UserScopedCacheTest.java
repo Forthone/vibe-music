@@ -16,7 +16,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.*;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.ReflectionTestUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import java.util.List;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,15 +30,23 @@ class UserScopedCacheTest {
     @Test void favoriteCacheSeparatesUsersAndRetainsSameUserHits() {
         var service = context.getBean(IUserFavoriteService.class);
         var mapper = context.getBean(UserFavoriteMapper.class);
-        when(mapper.getUserFavoriteSongIds(anyLong())).thenReturn(List.of());
+        var songs = context.getBean(SongMapper.class);
+        when(songs.getUserFavoriteSongs(any(), anyLong(), any(), any(), any()))
+                .thenAnswer(i -> {
+                    Page<com.vibemusic.model.vo.SongVO> page = i.getArgument(0);
+                    page.setTotal(37L);
+                    page.setRecords(List.of());
+                    return page;
+                });
         var query = new SongDTO(); query.setPageNum(1); query.setPageSize(20);
         ThreadLocalUtil.set(Map.of("userId", 1L, "role", "ROLE_USER"));
-        service.getUserFavoriteSongs(query);
+        assertEquals(37L, service.getUserFavoriteSongs(query).getData().getTotal());
         service.getUserFavoriteSongs(query);
         ThreadLocalUtil.set(Map.of("userId", 2L, "role", "ROLE_USER"));
         service.getUserFavoriteSongs(query);
-        verify(mapper, times(1)).getUserFavoriteSongIds(1L);
-        verify(mapper, times(1)).getUserFavoriteSongIds(2L);
+        verify(songs, times(1)).getUserFavoriteSongs(any(), eq(1L), any(), any(), any());
+        verify(songs, times(1)).getUserFavoriteSongs(any(), eq(2L), any(), any(), any());
+        verify(mapper, never()).getUserFavoriteSongIds(anyLong());
         ThreadLocalUtil.remove();
         assertThrows(IllegalStateException.class, () -> service.getUserFavoriteSongs(query));
     }

@@ -47,8 +47,8 @@
         WHERE s.id = #{songId}
     </select>
 
-    <!-- 根据歌曲id列表查询歌曲列表 -->
-    <select id="getSongsByIds" resultType="com.vibemusic.model.vo.SongVO">
+    <!-- 当前用户收藏歌曲分页 -->
+    <select id="getUserFavoriteSongs" resultType="com.vibemusic.model.vo.SongVO">
         SELECT
         s.id AS songId,
         s.name AS songName,
@@ -58,16 +58,10 @@
         s.audio_url AS audioUrl,
         s.release_time AS releaseTime,
         a.name AS artistName
-        FROM tb_song s
-        LEFT JOIN tb_artist a ON s.artist_id = a.id
-        LEFT JOIN tb_user_favorite u ON s.id = u.song_id
-        WHERE
-        <if test="songIds != null and songIds.size() > 0">
-            s.id IN
-            <foreach collection="songIds" item="id" open="(" separator="," close=")">
-                #{id}
-            </foreach>
-        </if>
+        FROM tb_user_favorite f
+        JOIN tb_song s ON s.id = f.song_id
+        LEFT JOIN tb_artist a ON a.id = s.artist_id
+        WHERE f.user_id = #{userId} AND f.type = 0
         <if test="songName != null and songName.trim() != ''">
             AND s.name LIKE CONCAT('%', #{songName}, '%')
         </if>
@@ -77,7 +71,7 @@
         <if test="album != null and album.trim() != ''">
             AND s.album LIKE CONCAT('%', #{album}, '%')
         </if>
-        ORDER BY u.create_time DESC
+        ORDER BY f.create_time DESC, f.id DESC
     </select>
 
     <!-- 根据用户收藏的歌曲id列表获取歌曲风格 -->
